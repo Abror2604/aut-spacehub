@@ -97,7 +97,7 @@
     const appState = {
       me: null,
       notifications: [],
-      tab: (window.location.hash || '').replace('#', '') || 'home',
+      tab: ['home', 'rooms', 'sessions', 'bookings', 'club'].includes((window.location.hash || '').replace('#', '')) ? (window.location.hash || '').replace('#', '') : 'home',
       selectedDate: initialClock.date,
       selectedTime: initialClock.time,
       roomFilters: { availableNow: false, minDuration: 0, minCapacity: 0, floor: '', search: '' },
@@ -238,6 +238,7 @@
       else if (appState.tab === 'sessions') root.innerHTML = renderSessions();
       else if (appState.tab === 'bookings') root.innerHTML = renderBookings();
       else if (appState.tab === 'club') root.innerHTML = renderClubPortal();
+      else { appState.tab = 'home'; root.innerHTML = renderHome(); }
       bindEvents();
       if (window.lucide) lucide.createIcons();
     }
