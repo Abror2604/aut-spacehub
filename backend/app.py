@@ -110,6 +110,11 @@ def _register_telegram_webhook():
 @app.on_event("startup")
 def on_startup():
     conn = init_db(seed=True)
+    try:
+        conn.execute("ALTER TABLE room_reservations ADD COLUMN checked_in_at TEXT")
+        conn.commit()
+    except Exception:
+        pass
     conn.close()
     if _live_bot_token() and _live_app_url().startswith("https://"):
         threading.Thread(target=_register_telegram_webhook, daemon=True).start()
@@ -400,6 +405,83 @@ def cancel_reservation(reservation_id: int, user: Dict = Depends(get_current_use
 # ---------------------------------------------------------------------------
 # SESSIONS (QUIET STUDY, COLLABORATION & PUBLISHED CLUB EVENTS)
 # ---------------------------------------------------------------------------
+def _compute_check_in_status(res_date: str, start_time: str, end_time: str, checked_in_at: Optional[str]) -> str:
+    if checked_in_at:
+        return "checked_in"
+    today_str, now_time = _default_tashkent_date_time()
+    if res_date > today_str:
+        return "upcoming"
+    if res_date < today_str:
+        return "missed"
+    now_m = to_mins(now_time)
+    start_m = to_mins(start_time)
+    end_m = to_mins(end_time)
+    if now_m < start_m - 15:
+        return "upcoming"
+    if now_m <= start_m + 15:
+        return "open"
+    if now_m < end_m:
+        return "overdue"
+    return "missed"
+
+
+@app.post("/api/reservations/{reservation_id}/check-in")
+def check_in_reservation(reservation_id: int, user: Dict = Depends(get_current_user)):
+    conn = get_connection()
+    try:
+        with transaction(conn):
+            row = conn.execute(
+                """SELECT rr.*, r.name AS room_name
+                   FROM room_reservations rr JOIN rooms r ON r.id = rr.room_id
+                   WHERE rr.id = ?""",
+                (reservation_id,),
+            ).fetchone()
+            if not row:
+                raise HTTPException(status_code=404, detail="Reservation not found.")
+            if row["user_id"] != user["id"] and not user["is_admin"]:
+                raise HTTPException(status_code=403, detail="You can only check in to your own reservation.")
+            if row["status"] != "confirmed":
+                raise HTTPException(status_code=400, detail="Only confirmed reservations can be checked in.")
+            if row["checked_in_at"]:
+                return {
+                    "id": reservation_id,
+                    "checked_in_at": row["checked_in_at"],
+                    "check_in_status": "checked_in",
+                    "message": "Already checked in.",
+                }
+            today_str, now_time = _default_tashkent_date_time()
+            now_m = to_mins(now_time)
+            start_m = to_mins(row["start_time"])
+            end_m = to_mins(row["end_time"])
+            if row["reservation_date"] > today_str or (row["reservation_date"] == today_str and now_m < start_m - 15):
+                open_m = max(0, start_m - 15)
+                open_str = f"{open_m // 60:02d}:{open_m % 60:02d}"
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Check-in opens 15 minutes before start ({row['reservation_date']} at {open_str} Tashkent time).",
+                )
+            if row["reservation_date"] < today_str or (row["reservation_date"] == today_str and now_m >= end_m):
+                raise HTTPException(status_code=400, detail="This reservation window has already ended.")
+            ts = now_tashkent_iso()
+            conn.execute("UPDATE room_reservations SET checked_in_at = ?, updated_at = ? WHERE id = ?", (ts, ts, reservation_id))
+            _queue_notification(
+                conn,
+                user["id"],
+                f"res_checkin_{reservation_id}",
+                "booking_checked_in",
+                "Room Check-In Confirmed",
+                f"Checked in to {row['room_name']} ({row['reservation_date']} {row['start_time']}–{row['end_time']}). Code: {row['booking_code']}",
+            )
+            return {
+                "id": reservation_id,
+                "checked_in_at": ts,
+                "check_in_status": "checked_in",
+                "room_name": row["room_name"],
+            }
+    finally:
+        conn.close()
+
+
 @app.get("/api/sessions")
 def list_sessions(
     session_type: Optional[str] = Query(default=None),
@@ -580,6 +662,10 @@ def my_bookings(user: Dict = Depends(get_current_user)):
                 "end_time": rr["end_time"],
                 "status": rr["status"],
                 "reservation_type": rr["reservation_type"],
+                "checked_in_at": rr.get("checked_in_at"),
+                "check_in_status": _compute_check_in_status(
+                    rr["reservation_date"], rr["start_time"], rr["end_time"], rr.get("checked_in_at")
+                ) if rr["status"] == "confirmed" else rr["status"],
             }
             if rr["status"] in ("cancelled", "rejected"):
                 cancelled.append(item)
@@ -1209,7 +1295,7 @@ async def telegram_webhook(request: Request):
                 sess_rows = conn.execute(
                     """SELECT s.title, s.room_id, s.session_date, s.start_time, s.end_time
                        FROM session_registrations sr
-                       JOIN sessions s ON s.id = sr.session_id
+                       JOIN study_sessions s ON s.id = sr.session_id
                        WHERE sr.user_id = ? AND sr.status = 'confirmed'
                        ORDER BY s.session_date, s.start_time LIMIT 6""",
                     (user["id"],),
