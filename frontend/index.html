@@ -100,6 +100,7 @@
       tab: ['home', 'rooms', 'sessions', 'bookings', 'club'].includes((window.location.hash || '').replace('#', '')) ? (window.location.hash || '').replace('#', '') : 'home',
       selectedDate: initialClock.date,
       selectedTime: initialClock.time,
+      roomView: 'timetable',
       roomFilters: { availableNow: false, minDuration: 0, minCapacity: 0, floor: '', search: '' },
       rooms: [],
       sessions: [],
@@ -311,14 +312,183 @@
       `;
     }
 
+
+    function getWeekDaysFor(dateStr) {
+      const [y, m, d] = dateStr.split('-').map(Number);
+      const base = new Date(Date.UTC(y, m - 1, d));
+      const dow = base.getUTCDay(); // 0=Sun..6=Sat
+      const diffToMon = dow === 0 ? -6 : 1 - dow;
+      const mon = new Date(base.getTime() + diffToMon * 86400000);
+      const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+      const fullNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+      return labels.map((lbl, i) => {
+        const dt = new Date(mon.getTime() + i * 86400000);
+        const iso = dt.toISOString().slice(0, 10);
+        return { label: lbl, full: fullNames[i], date: iso };
+      });
+    }
+
+    function getWeekdayLabel(dateStr) {
+      const [y, m, d] = dateStr.split('-').map(Number);
+      const names = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      return names[new Date(Date.UTC(y, m - 1, d)).getUTCDay()] || '';
+    }
+
+    function renderTimetableGrid(shown) {
+      const hours = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
+      const weekDays = getWeekDaysFor(appState.selectedDate);
+      const dayName = getWeekdayLabel(appState.selectedDate);
+      const nowClock = getTashkentNow();
+      const nowHour = nowClock.date === appState.selectedDate ? parseInt(nowClock.time.slice(0, 2), 10) : -1;
+
+      const pillStyle = (ev) => {
+        const s = ev.source || '';
+        if (s === 'class') return 'bg-aut-ink text-white';
+        if (s === 'session_quiet') return 'bg-aut-quiet text-white';
+        if (s === 'session_collaboration') return 'bg-aut-maroon text-white';
+        if (s === 'session_club_event' || s === 'club_event') return 'bg-amber-700 text-white';
+        if (s === 'student_study') return 'bg-teal-700 text-white';
+        return 'bg-neutral-500 text-white';
+      };
+
+      const shortStatus = (r) => {
+        if (r.status === 'available' || r.status === 'closing_soon') {
+          const hrs = Math.max(1, Math.floor((r.remaining_minutes || 60) / 60));
+          return `<span class="text-emerald-700 font-bold">Free ${hrs}h</span>`;
+        }
+        if (r.status === 'occupied') {
+          return `<span class="text-red-700 font-bold">Busy${r.next_available_start ? ' until ' + esc(r.next_available_start) : ''}</span>`;
+        }
+        if (r.status === 'closed') return `<span class="text-neutral-500 font-semibold">08:00–21:00</span>`;
+        return `<span class="text-neutral-500 font-semibold">Restricted</span>`;
+      };
+
+      return `
+        <div class="bg-white rounded-2xl border border-neutral-200 p-3 shadow-sm space-y-2.5">
+          <div class="flex items-center justify-between gap-2 flex-wrap">
+            <div class="flex items-center gap-1">
+              ${weekDays.map(wd => `
+                <button type="button" data-tt-day="${wd.date}" class="px-2.5 py-1 rounded-lg text-[11px] font-bold border ${appState.selectedDate === wd.date ? 'bg-aut-ink text-white border-aut-ink' : 'bg-white text-neutral-700 border-neutral-200'}">${wd.label}</button>
+              `).join('')}
+            </div>
+            <span class="text-[10px] font-semibold text-neutral-500">Tap any green slot to book</span>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-semibold text-neutral-600">
+            <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-aut-ink inline-block"></span>Class</span>
+            <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-aut-quiet inline-block"></span>Quiet Study</span>
+            <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-aut-maroon inline-block"></span>Collaboration</span>
+            <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-teal-700 inline-block"></span>Booked</span>
+            <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-emerald-100 border border-emerald-400 inline-block"></span>Free</span>
+          </div>
+
+          ${shown.length === 0 ? `<div class="p-6 text-center text-xs text-neutral-500">No rooms match your filter.</div>` : `
+            <div class="overflow-x-auto -mx-3 px-3 pb-1">
+              <table class="w-full border-collapse text-left" style="min-width: 980px;">
+                <thead>
+                  <tr class="border-b border-neutral-200 bg-neutral-50 text-[10px] font-bold text-neutral-600">
+                    <th class="sticky left-0 z-20 bg-neutral-50 px-2.5 py-2 border-r border-neutral-200 w-[108px] min-w-[108px]">
+                      Room<br><span class="text-[9px] font-semibold text-neutral-400">(${esc(dayName)})</span>
+                    </th>
+                    ${hours.map(h => `
+                      <th class="px-1.5 py-2 text-center border-r border-neutral-100 w-[72px] min-w-[72px] ${h === nowHour ? 'bg-aut-maroonLight text-aut-maroon' : ''}">
+                        ${String(h).padStart(2, '0')}:00${h === nowHour ? '<div class="text-[8px] font-extrabold uppercase">Now</div>' : ''}
+                      </th>
+                    `).join('')}
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-neutral-100">
+                  ${shown.map(r => {
+                    const evs = r.events || [];
+                    return `
+                      <tr>
+                        <td class="sticky left-0 z-10 bg-white px-2.5 py-2 border-r border-neutral-200 align-middle">
+                          <button type="button" data-room-open="${r.room_id}" class="text-left block w-full">
+                            <div class="font-extrabold text-[11px] text-aut-ink leading-tight">${esc(r.name)}</div>
+                            <div class="text-[9px] mt-0.5 leading-tight">${shortStatus(r)}</div>
+                          </button>
+                        </td>
+                        ${hours.map(h => {
+                          const slotS = h * 60;
+                          const slotE = (h + 1) * 60;
+                          const hit = evs.find(e => e.start_min < slotE && e.end_min > slotS);
+                          const startStr = `${String(h).padStart(2, '0')}:00`;
+                          const endStr = `${String(h + 1).padStart(2, '0')}:00`;
+                          if (hit) {
+                            const idx = evs.indexOf(hit);
+                            return `
+                              <td class="p-1 border-r border-neutral-100 align-middle ${h === nowHour ? 'bg-aut-maroonLight/30' : ''}">
+                                <button type="button" data-tt-info="${r.room_id}:${idx}" title="${esc(hit.title)} (${esc(hit.start)}–${esc(hit.end)})" class="w-full px-1.5 py-1.5 rounded-lg text-[9px] font-bold leading-tight truncate block text-left ${pillStyle(hit)}">
+                                  ${esc(hit.title)}
+                                </button>
+                              </td>
+                            `;
+                          }
+                          if (!r.student_bookable || r.status === 'unavailable') {
+                            return `<td class="p-1 border-r border-neutral-100 text-center text-[9px] text-neutral-300">—</td>`;
+                          }
+                          return `
+                            <td class="p-1 border-r border-neutral-100 align-middle ${h === nowHour ? 'bg-aut-maroonLight/20' : 'bg-emerald-50/40'}">
+                              <button type="button" data-tt-book="${r.room_id}|${startStr}|${endStr}" class="w-full py-1.5 rounded-lg text-[10px] font-bold text-emerald-700 hover:bg-emerald-100 active:bg-emerald-200 transition">
+                                Free
+                              </button>
+                            </td>
+                          `;
+                        }).join('')}
+                      </tr>
+                    `;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+          `}
+        </div>
+      `;
+    }
+
+    function openTimetableEventModal(roomId, evIdx) {
+      const r = appState.rooms.find(x => x.room_id === roomId);
+      if (!r || !r.events || !r.events[evIdx]) return;
+      const ev = r.events[evIdx];
+      const isSession = (ev.source || '').startsWith('session_');
+      openModal(`
+        <div class="p-5 space-y-3 text-xs">
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <span class="text-[10px] font-bold uppercase text-aut-maroon">${esc((ev.source || 'event').replace(/_/g, ' '))}</span>
+              <h2 class="text-base font-extrabold text-aut-ink mt-0.5">${esc(ev.title)}</h2>
+            </div>
+            <button type="button" onclick="closeModal()" class="p-1 rounded-lg hover:bg-neutral-100"><i data-lucide="x" class="w-5 h-5"></i></button>
+          </div>
+          <div class="p-3 rounded-xl bg-neutral-50 border border-neutral-200 space-y-1">
+            <div><strong>Room:</strong> ${esc(r.name)} (Floor ${r.floor})</div>
+            <div><strong>Time:</strong> ${esc(appState.selectedDate)} &middot; ${esc(ev.start)}–${esc(ev.end)}</div>
+            ${ev.subtitle ? `<div><strong>Details:</strong> ${esc(ev.subtitle)}</div>` : ''}
+          </div>
+          <div class="flex gap-2">
+            ${isSession ? `<button type="button" id="ttGoSessBtn" class="flex-1 py-2.5 rounded-xl bg-aut-maroon text-white font-bold">Open in Sessions</button>` : ''}
+            <button type="button" onclick="closeModal()" class="flex-1 py-2.5 rounded-xl border border-neutral-300 font-bold text-neutral-700">Close</button>
+          </div>
+        </div>
+      `);
+      const goBtn = document.getElementById('ttGoSessBtn');
+      if (goBtn) goBtn.addEventListener('click', () => { closeModal(); switchTab('sessions'); });
+    }
+
     function renderRooms() {
       const f = appState.roomFilters;
       const shown = appState.rooms.filter(r => !f.search || `${r.name} ${r.room_type} floor ${r.floor}`.toLowerCase().includes(f.search.toLowerCase()));
       return `
         <div class="space-y-3.5">
-          <div class="flex items-center justify-between">
-            <h1 class="text-lg font-extrabold text-aut-ink">Study Rooms</h1>
-            <span class="text-[11px] font-semibold text-neutral-500">${shown.length} rooms</span>
+          <div class="flex items-center justify-between gap-2">
+            <div>
+              <h1 class="text-lg font-extrabold text-aut-ink leading-tight">Study Rooms</h1>
+              <span class="text-[10px] font-semibold text-neutral-500">${shown.length} rooms &middot; ${esc(appState.selectedDate)}</span>
+            </div>
+            <div class="inline-flex bg-white p-0.5 rounded-xl border border-neutral-200 shadow-sm">
+              <button type="button" data-rm-view="timetable" class="px-2.5 py-1 rounded-lg text-[11px] font-bold ${appState.roomView === 'timetable' ? 'bg-aut-maroon text-white' : 'text-neutral-600'}">Timetable</button>
+              <button type="button" data-rm-view="cards" class="px-2.5 py-1 rounded-lg text-[11px] font-bold ${appState.roomView === 'cards' ? 'bg-aut-maroon text-white' : 'text-neutral-600'}">Cards</button>
+            </div>
           </div>
 
           <div class="bg-white rounded-2xl border border-neutral-200 p-3.5 space-y-2.5 shadow-sm">
@@ -343,6 +513,7 @@
             </div>
           </div>
 
+          ${appState.roomView === 'timetable' ? renderTimetableGrid(shown) : `
           <div class="space-y-3">
             ${shown.length === 0 ? `<div class="bg-white rounded-2xl border border-neutral-200 p-8 text-center text-xs text-neutral-500">No rooms match your filter for ${esc(appState.selectedDate)} at ${esc(appState.selectedTime)}.</div>` : shown.map(r => {
               const isAvail = r.status === 'available' || r.status === 'closing_soon';
@@ -383,6 +554,7 @@
               `;
             }).join('')}
           </div>
+          `}
         </div>
       `;
     }
@@ -419,12 +591,12 @@
       if (b) b.addEventListener('click', () => openReserveModal(roomId));
     }
 
-    function openReserveModal(roomId) {
+    function openReserveModal(roomId, preStart = null, preEnd = null) {
       const r = appState.rooms.find(x => x.room_id === roomId);
       if (!r) return;
       const firstWin = (r.free_windows || [])[0];
-      const defStart = r.next_available_start || (firstWin ? firstWin.start : '10:00');
-      const defEnd = firstWin && defStart === firstWin.start ? firstWin.end.slice(0, 5) : '12:00';
+      const defStart = preStart || r.next_available_start || (firstWin ? firstWin.start : '10:00');
+      const defEnd = preEnd || (firstWin && defStart === firstWin.start ? firstWin.end.slice(0, 5) : '12:00');
       openModal(`
         <form id="resForm" class="p-5 space-y-3.5 text-xs">
           <div class="flex items-start justify-between">
@@ -689,6 +861,16 @@
       document.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.go)));
       document.querySelectorAll('[data-room-open]').forEach(b => b.addEventListener('click', () => openRoomDetail(b.dataset.roomOpen)));
       document.querySelectorAll('[data-room-book]').forEach(b => b.addEventListener('click', () => openReserveModal(b.dataset.roomBook)));
+      document.querySelectorAll('[data-rm-view]').forEach(b => b.addEventListener('click', () => { appState.roomView = b.dataset.rmView; render(); }));
+      document.querySelectorAll('[data-tt-day]').forEach(b => b.addEventListener('click', () => { appState.selectedDate = b.dataset.ttDay; refreshAll(); }));
+      document.querySelectorAll('[data-tt-book]').forEach(b => b.addEventListener('click', () => {
+        const [rid, s, e] = b.dataset.ttBook.split('|');
+        openReserveModal(rid, s, e);
+      }));
+      document.querySelectorAll('[data-tt-info]').forEach(b => b.addEventListener('click', () => {
+        const [rid, idx] = b.dataset.ttInfo.split(':');
+        openTimetableEventModal(rid, parseInt(idx, 10));
+      }));
 
       const rmDate = document.getElementById('rmDate');
       if (rmDate) rmDate.addEventListener('change', (e) => { appState.selectedDate = e.target.value; refreshAll(); });
