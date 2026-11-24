@@ -1,8 +1,10 @@
 import os
+import threading
 import uuid
 from datetime import datetime
 from typing import Dict, List, Optional
-from fastapi import Depends, FastAPI, HTTPException, Query
+import httpx
+from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse
 from .auth import get_current_user, require_admin, require_club_leader
@@ -38,18 +40,95 @@ app.add_middleware(
 )
 
 
+def _live_bot_token() -> str:
+    return os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
+
+
+def _live_app_url() -> str:
+    url = (
+        os.getenv("MINI_APP_URL")
+        or os.getenv("RENDER_EXTERNAL_URL")
+        or "https://aut-spacehub.onrender.com"
+    ).strip().rstrip("/")
+    return url
+
+
+def _tg_api_call(method: str, payload: dict):
+    token = _live_bot_token()
+    if not token:
+        return None
+    try:
+        resp = httpx.post(
+            f"https://api.telegram.org/bot{token}/{method}",
+            json=payload,
+            timeout=6.0,
+        )
+        return resp.json() if resp.status_code == 200 else None
+    except Exception:
+        return None
+
+
+def _send_telegram_message_async(chat_id: int, text: str, include_open_btn: bool = True):
+    token = _live_bot_token()
+    if not token or not chat_id:
+        return
+    payload = {
+        "chat_id": int(chat_id),
+        "text": text,
+        "parse_mode": "HTML",
+    }
+    if include_open_btn:
+        app_url = _live_app_url()
+        if app_url.startswith("https://"):
+            payload["reply_markup"] = {
+                "inline_keyboard": [
+                    [{"text": "🏫 Open AUT SpaceHub", "web_app": {"url": app_url}}]
+                ]
+            }
+    threading.Thread(target=_tg_api_call, args=("sendMessage", payload), daemon=True).start()
+
+
+def _register_telegram_webhook():
+    token = _live_bot_token()
+    app_url = _live_app_url()
+    if not token or not app_url.startswith("https://"):
+        return
+    _tg_api_call("setWebhook", {"url": f"{app_url}/telegram/webhook", "drop_pending_updates": False})
+    _tg_api_call(
+        "setMyCommands",
+        {
+            "commands": [
+                {"command": "start", "description": "Open AUT SpaceHub"},
+                {"command": "rooms", "description": "Check free rooms right now"},
+                {"command": "bookings", "description": "View your active bookings"},
+                {"command": "help", "description": "How to use AUT SpaceHub"},
+            ]
+        },
+    )
+
+
 @app.on_event("startup")
 def on_startup():
     conn = init_db(seed=True)
     conn.close()
+    if _live_bot_token() and _live_app_url().startswith("https://"):
+        threading.Thread(target=_register_telegram_webhook, daemon=True).start()
 
 
 def _queue_notification(conn, user_id: int, event_key: str, notif_type: str, title: str, message: str):
-    conn.execute(
+    cur = conn.execute(
         """INSERT OR IGNORE INTO notifications (user_id, event_key, notif_type, title, message, is_sent, created_at)
            VALUES (?, ?, ?, ?, ?, 0, ?)""",
         (user_id, event_key, notif_type, title, message, now_tashkent_iso()),
     )
+    if cur.rowcount and _live_bot_token():
+        u = conn.execute("SELECT telegram_id FROM users WHERE id = ?", (user_id,)).fetchone()
+        if u and u["telegram_id"]:
+            _send_telegram_message_async(
+                u["telegram_id"],
+                f"<b>{title}</b>\n{message}",
+                include_open_btn=True,
+            )
 
 
 def _log_admin(conn, admin_user_id: int, action_type: str, target_entity: str, target_id: str, details: str = ""):
@@ -1041,3 +1120,126 @@ def admin_create_session(payload: AdminSessionCreate, user: Dict = Depends(get_c
             return {"session_id": cur.lastrowid, "session_code": code}
     finally:
         conn.close()
+
+
+# ---------------------------------------------------------------------------
+# TELEGRAM BOT WEBHOOK (LIVE /start, /rooms, /bookings, /help)
+# ---------------------------------------------------------------------------
+@app.post("/telegram/webhook")
+async def telegram_webhook(request: Request):
+    try:
+        update = await request.json()
+    except Exception:
+        return {"ok": True}
+
+    msg = update.get("message") or update.get("edited_message")
+    if not msg:
+        return {"ok": True}
+
+    chat = msg.get("chat") or {}
+    chat_id = chat.get("id")
+    from_user = msg.get("from") or {}
+    tg_id = from_user.get("id")
+    first_name = (from_user.get("first_name") or "Student").strip()
+    text = (msg.get("text") or "").strip()
+
+    if not chat_id:
+        return {"ok": True}
+
+    cmd = text.split()[0].lower().split("@")[0] if text.startswith("/") else ""
+
+    if cmd == "/start":
+        reply = (
+            f"👋 <b>Welcome to AUT SpaceHub, {first_name}!</b>\n\n"
+            "Find live free classrooms at <b>AUT Beshyogoch Campus</b>, book quiet study slots, "
+            "join Collaboration sessions, or submit club events — all right inside Telegram.\n\n"
+            "Tap the button below to launch SpaceHub, or use /rooms and /bookings anytime."
+        )
+        _send_telegram_message_async(chat_id, reply, include_open_btn=True)
+        return {"ok": True}
+
+    if cmd == "/rooms":
+        date_str, time_str = _default_tashkent_date_time()
+        conn = get_connection()
+        try:
+            rooms = conn.execute(
+                """SELECT r.*, p.access_mode, p.open_time, p.close_time, p.buffer_minutes, p.notes AS perm_notes
+                   FROM rooms r JOIN room_permissions p ON r.id = p.room_id
+                   WHERE r.is_active = 1 AND p.access_mode IN ('student_only', 'shared')
+                   ORDER BY r.floor, r.id"""
+            ).fetchall()
+            free_lines = []
+            for r in rooms:
+                avail = compute_room_availability(conn, r, r, date_str, time_str)
+                if avail["status"] == "free_now":
+                    free_lines.append(f"• <b>{r['name']}</b> — {avail['status_label']}")
+        finally:
+            conn.close()
+        if free_lines:
+            shown = "\n".join(free_lines[:8])
+            more = f"\n<i>+{len(free_lines) - 8} more in SpaceHub</i>" if len(free_lines) > 8 else ""
+            reply = f"🟢 <b>Free AUT Rooms Now ({time_str} Tashkent)</b>\n{shown}{more}"
+        else:
+            reply = (
+                f"🕒 <b>AUT Campus Status ({time_str} Tashkent)</b>\n"
+                "No rooms are free right now (campus study hours are 08:00–21:00). "
+                "Open SpaceHub to view and book tomorrow's open slots."
+            )
+        _send_telegram_message_async(chat_id, reply, include_open_btn=True)
+        return {"ok": True}
+
+    if cmd == "/bookings":
+        conn = get_connection()
+        try:
+            user = conn.execute("SELECT id FROM users WHERE telegram_id = ?", (tg_id,)).fetchone() if tg_id else None
+            lines = []
+            if user:
+                res_rows = conn.execute(
+                    """SELECT rr.room_id, rr.reservation_date, rr.start_time, rr.end_time, rr.booking_code
+                       FROM room_reservations rr
+                       WHERE rr.user_id = ? AND rr.status = 'confirmed'
+                       ORDER BY rr.reservation_date, rr.start_time LIMIT 6""",
+                    (user["id"],),
+                ).fetchall()
+                for row in res_rows:
+                    lines.append(
+                        f"• <b>Room {row['room_id']}</b> — {row['reservation_date']} "
+                        f"({row['start_time']}–{row['end_time']}) · <code>{row['booking_code']}</code>"
+                    )
+                sess_rows = conn.execute(
+                    """SELECT s.title, s.room_id, s.session_date, s.start_time, s.end_time
+                       FROM session_registrations sr
+                       JOIN sessions s ON s.id = sr.session_id
+                       WHERE sr.user_id = ? AND sr.status = 'confirmed'
+                       ORDER BY s.session_date, s.start_time LIMIT 6""",
+                    (user["id"],),
+                ).fetchall()
+                for row in sess_rows:
+                    lines.append(
+                        f"• <b>{row['title']}</b> (Room {row['room_id']}) — "
+                        f"{row['session_date']} ({row['start_time']}–{row['end_time']})"
+                    )
+        finally:
+            conn.close()
+        if lines:
+            reply = "📅 <b>Your Active AUT SpaceHub Bookings</b>\n" + "\n".join(lines)
+        else:
+            reply = "📅 You don't have any active bookings yet. Tap below to reserve a study room or join a session!"
+        _send_telegram_message_async(chat_id, reply, include_open_btn=True)
+        return {"ok": True}
+
+    if cmd == "/help":
+        reply = (
+            "ℹ️ <b>AUT SpaceHub Commands</b>\n"
+            "/start — Welcome screen & launch button\n"
+            "/rooms — Check free AUT rooms right now\n"
+            "/bookings — See your active bookings\n"
+            "/help — Show this help menu\n\n"
+            "You'll also receive automatic Telegram confirmations here whenever you book a room or join a session."
+        )
+        _send_telegram_message_async(chat_id, reply, include_open_btn=True)
+        return {"ok": True}
+
+    reply = "Tap <b>Open AUT SpaceHub</b> below to browse rooms, join sessions, or manage bookings."
+    _send_telegram_message_async(chat_id, reply, include_open_btn=True)
+    return {"ok": True}
