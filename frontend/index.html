@@ -568,12 +568,22 @@
             <div class="space-y-2.5">
               ${list.map(b => `
                 <div class="bg-white rounded-2xl border border-neutral-200 p-4 shadow-sm space-y-2">
-                  <div class="flex justify-between items-center">
+                  <div class="flex justify-between items-center gap-2">
                     <span class="text-[10px] font-mono font-bold text-neutral-500">${esc(b.code)}</span>
-                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">${esc(b.status.replace('_', ' '))}</span>
+                    <div class="flex items-center gap-1.5">
+                      ${b.kind === 'room_reservation' && b.check_in_status === 'checked_in' ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-600 text-white">✓ Checked In</span>' : ''}
+                      ${b.kind === 'room_reservation' && b.check_in_status === 'open' ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-aut-maroonLight text-aut-maroon">15m Check-In Open</span>' : ''}
+                      ${b.kind === 'room_reservation' && b.check_in_status === 'overdue' ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900">⚠ Check-In Overdue</span>' : ''}
+                      <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">${esc(b.status.replace('_', ' '))}</span>
+                    </div>
                   </div>
                   <div class="font-bold text-sm text-aut-ink">${esc(b.title)}</div>
                   <div class="text-xs text-neutral-600">${esc(b.room_name)} &middot; ${esc(b.date)} &middot; ${esc(b.start_time)}–${esc(b.end_time)}</div>
+                  ${appState.bookingTab === 'upcoming' && b.kind === 'room_reservation' && b.check_in_status !== 'checked_in' ? `
+                    <button type="button" data-checkin-bk="${b.id}" class="w-full py-2 rounded-xl ${b.check_in_status === 'open' || b.check_in_status === 'overdue' ? 'bg-emerald-600 text-white' : 'bg-neutral-100 text-neutral-700 border border-neutral-300'} text-xs font-bold">
+                      ${b.check_in_status === 'open' ? '✓ Check In Now (15-min window)' : b.check_in_status === 'overdue' ? '⚠ Late Check-In (Keep Slot)' : '✓ Check In (Opens 15m before start)'}
+                    </button>
+                  ` : ''}
                   ${appState.bookingTab === 'upcoming' ? `
                     <div class="grid grid-cols-2 gap-2">
                       <button type="button" data-share-bk="${b.kind}:${b.id}" class="py-2 rounded-xl bg-aut-maroon text-white text-xs font-bold">📤 Share Group</button>
@@ -742,6 +752,13 @@
       }));
 
       document.querySelectorAll('[data-bt]').forEach(b => b.addEventListener('click', () => { appState.bookingTab = b.dataset.bt; render(); }));
+      document.querySelectorAll('[data-checkin-bk]').forEach(b => b.addEventListener('click', async () => {
+        try {
+          const out = await api(`/api/reservations/${b.dataset.checkinBk}/check-in`, { method: 'POST' });
+          toast(`Checked in to ${out.room_name || 'your room'}!`);
+          await refreshAll();
+        } catch (ex) { toast(ex.message, 'error'); }
+      }));
       document.querySelectorAll('[data-cancel-bk]').forEach(b => b.addEventListener('click', async () => {
         const [kind, id] = b.dataset.cancelBk.split(':');
         try {
