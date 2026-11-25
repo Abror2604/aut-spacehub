@@ -24,12 +24,14 @@ def get_connection(db_path: str = None) -> sqlite3.Connection:
 def transaction(conn: sqlite3.Connection):
     """Serializable write lock using BEGIN IMMEDIATE to prevent concurrent booking races."""
     conn.execute("BEGIN IMMEDIATE;")
+    committed = False
     try:
         yield conn
         conn.execute("COMMIT;")
-    except Exception:
-        conn.execute("ROLLBACK;")
-        raise
+        committed = True
+    finally:
+        if not committed:
+            conn.execute("ROLLBACK;")
 
 
 SCHEMA_SQL = """
