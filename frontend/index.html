@@ -50,8 +50,9 @@
           <div id="headerSub" class="text-[10px] text-neutral-500 truncate">AUT Beshyogoch &middot; Asia/Tashkent</div>
         </div>
       </div>
-      <div class="flex items-center gap-1">
-        <a id="adminLinkBtn" href="/admin" class="hidden px-2.5 py-1 rounded-lg bg-aut-ink text-white text-[10px] font-bold">Admin</a>
+      <div class="flex items-center gap-1 shrink-0">
+        <button id="langToggleBtn" type="button" class="px-2 py-1 rounded-lg border border-neutral-300 bg-neutral-50 hover:bg-neutral-100 text-[10px] font-extrabold text-aut-ink shrink-0" aria-label="Switch language">EN</button>
+        <a id="adminLinkBtn" href="/admin" class="hidden px-2 py-1 rounded-lg bg-aut-ink text-white text-[10px] font-bold">Admin</a>
         <button id="notifBellBtn" type="button" class="relative p-2 rounded-full hover:bg-neutral-100 text-neutral-700" aria-label="Notifications">
           <i data-lucide="bell" class="w-4 h-4"></i>
           <span id="notifDot" class="hidden absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-aut-maroon"></span>
@@ -93,8 +94,122 @@
       return { date: fmtDate, time: fmtTime };
     }
 
+
+    const I18N = {
+      en: {
+        nav_home: 'Home', nav_rooms: 'Rooms', nav_sessions: 'Sessions', nav_bookings: 'My Bookings', nav_club: 'Club Portal',
+        campus: 'AUT Beshyogoch Campus', hi: 'Hi', hero_sub: 'Where would you like to study or organize an activity?',
+        find_room: 'Find a Room', explore_sessions: 'Explore Sessions', avail_now: 'Available Now',
+        free_short: 'free', for_2h: 'for 2h+',
+        closed_note: 'Campus study hours are 08:00–21:00. Open Rooms to check tomorrow\'s schedule.',
+        free_until: 'Free until', next_booking: 'Your Next Booking', view_all: 'View all',
+        club_leader: 'Approved Club Leader', club_portal: 'Club Portal',
+        study_rooms: 'Study Rooms', rooms_word: 'rooms', timetable: 'Timetable', cards: 'Cards',
+        date: 'Date', time_tash: 'Time (Tashkent)', search_ph: 'Search room number or type...',
+        flt_avail: 'Available Now', flt_2h: '2+ Hours Free', all_floors: 'All Floors', floor: 'Floor',
+        tap_green: 'Tap any green slot to book', leg_class: 'Class', leg_quiet: 'Quiet Study',
+        leg_collab: 'Collaboration', leg_booked: 'Booked', leg_free: 'Free',
+        room_col: 'Room', now_lbl: 'Now', free_cell: 'Free', reserve: 'Reserve',
+        sessions_title: 'Study Sessions & Club Events', all: 'All', club_events: 'Club Events',
+        no_sessions: 'No sessions in this category yet.', full: 'Full', seats_left: 'seats left',
+        share_group: '📤 Share Group', leave_session: 'Leave Session', session_full: 'Session Full',
+        join_session: 'Join Session', reg_group: 'Register Group',
+        my_bookings: 'My Bookings', upcoming: 'Upcoming', past: 'Past', cancelled: 'Cancelled',
+        no_bookings: 'No bookings here yet.', cancel: 'Cancel',
+        checked_in: '✓ Checked In', checkin_open: '15m Check-In Open', checkin_overdue: '⚠ Check-In Overdue',
+        btn_checkin_now: t('btn_checkin_now'), btn_checkin_late: t('btn_checkin_late'),
+        btn_checkin_soon: t('btn_checkin_soon'),
+        reserve_room: 'Reserve Room', start: 'Start', end: 'End', purpose: 'Purpose',
+        confirm_res: 'Confirm Reservation', room_reserved: 'Room Reserved!',
+        share_study_group: '📤 Share with Study Group', done: 'Done', close: 'Close',
+        days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+        full_days: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+      },
+      uz: {
+        nav_home: 'Bosh sahifa', nav_rooms: 'Xonalar', nav_sessions: 'Sessiyalar', nav_bookings: 'Bronlarim', nav_club: 'Klub',
+        campus: 'AUT Beshyog‘och Kampusi', hi: 'Salom', hero_sub: 'Bugun qayerda o‘qishni yoki tadbir o‘tkazishni xohlaysiz?',
+        find_room: 'Xona topish', explore_sessions: 'Sessiyalar', avail_now: 'Hozir bo‘sh',
+        free_short: 'bo‘sh', for_2h: '2+ soatga',
+        closed_note: 'Kampus soatlari 08:00–21:00. Ertangi jadvalni ko‘rish uchun Xonalar bo‘limini oching.',
+        free_until: 'Bo‘sh vaqti:', next_booking: 'Keyingi broningiz', view_all: 'Barchasi',
+        club_leader: 'Tasdiqlangan klub yetakchisi', club_portal: 'Klub portali',
+        study_rooms: 'O‘quv xonalari', rooms_word: 'xona', timetable: 'Jadval', cards: 'Kartalar',
+        date: 'Sana', time_tash: 'Vaqt (Toshkent)', search_ph: 'Xona raqami yoki turini qidiring...',
+        flt_avail: 'Hozir bo‘sh', flt_2h: '2+ soat bo‘sh', all_floors: 'Barcha qavatlar', floor: 'Qavat',
+        tap_green: 'Bron qilish uchun yashil katakni bosing', leg_class: 'Dars', leg_quiet: 'Tinch o‘qish',
+        leg_collab: 'Jamoaviy', leg_booked: 'Band', leg_free: 'Bo‘sh',
+        room_col: 'Xona', now_lbl: 'Hozir', free_cell: 'Bo‘sh', reserve: 'Bron qilish',
+        sessions_title: 'O‘quv sessiyalari va klub tadbirlari', all: 'Barchasi', club_events: 'Klublar',
+        no_sessions: 'Bu bo‘limda hozircha sessiyalar yo‘q.', full: 'To‘lgan', seats_left: 'joy qoldi',
+        share_group: '📤 Ulashish', leave_session: 'Chiqish', session_full: 'Joylar to‘lgan',
+        join_session: 'Qo‘shilish', reg_group: 'Guruhni yozish',
+        my_bookings: 'Bronlarim', upcoming: 'Kutilayotgan', past: 'O‘tgan', cancelled: 'Bekor qilingan',
+        no_bookings: 'Hozircha bronlar yo‘q.', cancel: 'Bekor qilish',
+        checked_in: '✓ Keldi', checkin_open: '15 daq. tasdiqlash ochiq', checkin_overdue: '⚠ Tasdiqlash kechikdi',
+        btn_checkin_now: '✓ Hozir tasdiqlash (15 daq.)', btn_checkin_late: '⚠ Kechikib tasdiqlash',
+        btn_checkin_soon: '✓ Tasdiqlash (15 daq. oldin ochiladi)',
+        reserve_room: 'Xonani bron qilish', start: 'Boshlanish', end: 'Tugash', purpose: 'Maqsad',
+        confirm_res: 'Bronni tasdiqlash', room_reserved: 'Xona bron qilindi!',
+        share_study_group: '📤 O‘quv guruhiga ulashish', done: 'Tayyor', close: 'Yopish',
+        days: ['Du', 'Se', 'Ch', 'Pa', 'Ju'],
+        full_days: ['Yakshanba', 'Dushanba', 'Seshanba', 'Chorshanba', 'Payshanba', 'Juma', 'Shanba']
+      },
+      ru: {
+        nav_home: 'Главная', nav_rooms: 'Аудитории', nav_sessions: 'Сессии', nav_bookings: 'Брони', nav_club: 'Клуб',
+        campus: 'Кампус AUT Бешёгоч', hi: 'Привет', hero_sub: 'Где вы хотите позаниматься или провести встречу сегодня?',
+        find_room: 'Найти аудиторию', explore_sessions: 'Сессии', avail_now: 'Свободно сейчас',
+        free_short: 'своб.', for_2h: 'на 2+ ч',
+        closed_note: 'Часы работы кампуса 08:00–21:00. Откройте Аудитории, чтобы посмотреть расписание на завтра.',
+        free_until: 'Свободно до', next_booking: 'Ближайшая бронь', view_all: 'Все',
+        club_leader: 'Лидер клуба', club_portal: 'Клубный портал',
+        study_rooms: 'Учебные аудитории', rooms_word: 'аудиторий', timetable: 'Расписание', cards: 'Карточки',
+        date: 'Дата', time_tash: 'Время (Ташкент)', search_ph: 'Поиск номера или типа аудитории...',
+        flt_avail: 'Свободно сейчас', flt_2h: '2+ часа свободно', all_floors: 'Все этажи', floor: 'Этаж',
+        tap_green: 'Нажмите на зелёный слот для брони', leg_class: 'Пара', leg_quiet: 'Тихая зона',
+        leg_collab: 'Коллаборация', leg_booked: 'Занято', leg_free: 'Своб.',
+        room_col: 'Ауд.', now_lbl: 'Сейчас', free_cell: 'Своб.', reserve: 'Бронь',
+        sessions_title: 'Учебные сессии и клубы', all: 'Все', club_events: 'Клубы',
+        no_sessions: 'В этой категории пока нет сессий.', full: 'Нет мест', seats_left: 'мест ост.',
+        share_group: '📤 Поделиться', leave_session: 'Выйти', session_full: 'Мест нет',
+        join_session: 'Записаться', reg_group: 'Записать группу',
+        my_bookings: 'Мои брони', upcoming: 'Предстоящие', past: 'Прошедшие', cancelled: 'Отменённые',
+        no_bookings: 'Бронирований пока нет.', cancel: 'Отменить',
+        checked_in: '✓ Подтверждено', checkin_open: 'Чек-ин открыт (15м)', checkin_overdue: '⚠ Чек-ин просрочен',
+        btn_checkin_now: '✓ Отметиться сейчас (15 мин)', btn_checkin_late: '⚠ Поздний чек-ин',
+        btn_checkin_soon: '✓ Чек-ин (откроется за 15 мин)',
+        reserve_room: 'Бронирование аудитории', start: 'Начало', end: 'Конец', purpose: 'Цель',
+        confirm_res: 'Подтвердить бронь', room_reserved: 'Аудитория забронирована!',
+        share_study_group: '📤 Отправить в учебный чат', done: 'Готово', close: 'Закрыть',
+        days: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт'],
+        full_days: ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота']
+      }
+    };
+
+    function getSavedLang() {
+      try {
+        const v = localStorage.getItem('spacehub_lang');
+        if (v && I18N[v]) return v;
+      } catch (e) {}
+      return 'en';
+    }
+
+    function t(key) {
+      const dict = I18N[appState.lang] || I18N.en;
+      return dict[key] !== undefined ? dict[key] : (I18N.en[key] || key);
+    }
+
+    function cycleLang() {
+      const order = ['en', 'uz', 'ru'];
+      appState.lang = order[(order.indexOf(appState.lang) + 1) % order.length];
+      try { localStorage.setItem('spacehub_lang', appState.lang); } catch (e) {}
+      const btn = document.getElementById('langToggleBtn');
+      if (btn) btn.textContent = appState.lang.toUpperCase();
+      render();
+    }
+
     const initialClock = getTashkentNow();
     const appState = {
+      lang: getSavedLang(),
       me: null,
       notifications: [],
       tab: ['home', 'rooms', 'sessions', 'bookings', 'club'].includes((window.location.hash || '').replace('#', '')) ? (window.location.hash || '').replace('#', '') : 'home',
@@ -211,13 +326,13 @@
     function renderBottomNav() {
       const nav = document.getElementById('bottomNav');
       const items = [
-        { id: 'home', label: 'Home', icon: 'home' },
-        { id: 'rooms', label: 'Rooms', icon: 'door-open' },
-        { id: 'sessions', label: 'Sessions', icon: 'users' },
-        { id: 'bookings', label: 'My Bookings', icon: 'calendar-check' }
+        { id: 'home', label: t('nav_home'), icon: 'home' },
+        { id: 'rooms', label: t('nav_rooms'), icon: 'door-open' },
+        { id: 'sessions', label: t('nav_sessions'), icon: 'users' },
+        { id: 'bookings', label: t('nav_bookings'), icon: 'calendar-check' }
       ];
       if (appState.me && appState.me.is_approved_club_leader) {
-        items.push({ id: 'club', label: 'Club Portal', icon: 'sparkles' });
+        items.push({ id: 'club', label: t('nav_club'), icon: 'sparkles' });
       }
       nav.className = `fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white border-t border-neutral-200 z-30 px-1 py-1.5 grid ${items.length === 5 ? 'grid-cols-5' : 'grid-cols-4'}`;
       nav.innerHTML = items.map(it => `
@@ -232,6 +347,7 @@
     function render() {
       if (!appState.me) return;
       document.getElementById('headerSub').textContent = `${appState.selectedDate} · ${appState.selectedTime} (Asia/Tashkent)`;
+      const lb = document.getElementById('langToggleBtn'); if (lb) lb.textContent = appState.lang.toUpperCase();
       renderBottomNav();
       const root = document.getElementById('screenRoot');
       if (appState.tab === 'home') root.innerHTML = renderHome();
@@ -253,33 +369,33 @@
       return `
         <div class="space-y-4">
           <div class="bg-white rounded-2xl border border-neutral-200 p-4 shadow-sm">
-            <div class="text-[11px] font-semibold text-aut-maroon uppercase tracking-wider">AUT Beshyogoch Campus</div>
-            <h1 class="text-xl font-extrabold text-aut-ink mt-1">Hi, ${esc(firstName)}</h1>
-            <p class="text-xs text-neutral-600 mt-1">Where would you like to study or organize an activity?</p>
+            <div class="text-[11px] font-semibold text-aut-maroon uppercase tracking-wider">${esc(t('campus'))}</div>
+            <h1 class="text-xl font-extrabold text-aut-ink mt-1">${esc(t('hi'))}, ${esc(firstName)}</h1>
+            <p class="text-xs text-neutral-600 mt-1">${esc(t('hero_sub'))}</p>
             <div class="grid grid-cols-2 gap-2.5 mt-4">
               <button type="button" data-go="rooms" class="py-3 px-3 rounded-xl bg-aut-maroon hover:bg-aut-maroonDark text-white font-bold text-xs flex items-center justify-center gap-1.5">
-                <i data-lucide="door-open" class="w-4 h-4"></i> Find a Room
+                <i data-lucide="door-open" class="w-4 h-4"></i> ${esc(t('find_room'))}
               </button>
               <button type="button" data-go="sessions" class="py-3 px-3 rounded-xl bg-aut-ink hover:bg-neutral-800 text-white font-bold text-xs flex items-center justify-center gap-1.5">
-                <i data-lucide="users" class="w-4 h-4"></i> Explore Sessions
+                <i data-lucide="users" class="w-4 h-4"></i> ${esc(t('explore_sessions'))}
               </button>
             </div>
           </div>
 
           <div class="bg-white rounded-2xl border border-neutral-200 p-4 shadow-sm">
             <div class="flex items-center justify-between mb-2.5">
-              <span class="text-xs font-extrabold text-aut-ink">Available Now (${esc(appState.selectedTime)})</span>
-              <span class="text-[11px] font-semibold text-emerald-700">${freeNow.length} free &middot; ${free2h.length} for 2h+</span>
+              <span class="text-xs font-extrabold text-aut-ink">${esc(t('avail_now'))} (${esc(appState.selectedTime)})</span>
+              <span class="text-[11px] font-semibold text-emerald-700">${freeNow.length} ${esc(t('free_short'))} &middot; ${free2h.length} ${esc(t('for_2h'))}</span>
             </div>
             ${freeNow.length === 0 ? `
-              <p class="text-xs text-neutral-500">Campus study hours are 08:00–21:00. Open <strong>Rooms</strong> to check tomorrow's schedule.</p>
+              <p class="text-xs text-neutral-500">${esc(t('closed_note'))}</p>
             ` : `
               <div class="space-y-2">
                 ${freeNow.slice(0, 3).map(r => `
                   <button type="button" data-room-open="${r.room_id}" class="w-full text-left p-3 rounded-xl bg-neutral-50 hover:bg-aut-maroonLight border border-neutral-200 flex items-center justify-between">
                     <div>
                       <div class="font-bold text-xs text-aut-ink">${esc(r.name)} <span class="font-normal text-neutral-500">&middot; Fl ${r.floor}</span></div>
-                      <div class="text-[11px] text-emerald-800 font-semibold mt-0.5">Free until ${esc(r.free_until)} (${esc(r.remaining_text)})</div>
+                      <div class="text-[11px] text-emerald-800 font-semibold mt-0.5">${esc(t('free_until'))} ${esc(r.free_until)} (${esc(r.remaining_text)})</div>
                     </div>
                     <i data-lucide="chevron-right" class="w-4 h-4 text-neutral-400"></i>
                   </button>
@@ -291,8 +407,8 @@
           ${nextBk ? `
             <div class="bg-white rounded-2xl border-l-4 border-l-aut-maroon border border-neutral-200 p-4 shadow-sm">
               <div class="flex items-center justify-between">
-                <span class="text-[11px] font-bold uppercase text-aut-maroon">Your Next Booking</span>
-                <button type="button" data-go="bookings" class="text-[11px] font-semibold text-neutral-500">View all &rarr;</button>
+                <span class="text-[11px] font-bold uppercase text-aut-maroon">${esc(t('next_booking'))}</span>
+                <button type="button" data-go="bookings" class="text-[11px] font-semibold text-neutral-500">${esc(t('view_all'))} &rarr;</button>
               </div>
               <div class="font-bold text-sm text-aut-ink mt-1">${esc(nextBk.title)}</div>
               <div class="text-xs text-neutral-600 mt-0.5">${esc(nextBk.room_name)} &middot; ${esc(nextBk.date)} &middot; ${esc(nextBk.start_time)}–${esc(nextBk.end_time)}</div>
@@ -302,10 +418,10 @@
           ${appState.me.is_approved_club_leader ? `
             <div class="bg-aut-maroonLight border border-aut-maroonBorder rounded-2xl p-4 flex items-center justify-between gap-3">
               <div>
-                <div class="text-[10px] font-extrabold uppercase text-aut-maroon">Approved Club Leader</div>
+                <div class="text-[10px] font-extrabold uppercase text-aut-maroon">${esc(t('club_leader'))}</div>
                 <div class="font-bold text-sm text-aut-ink mt-0.5">${esc(appState.me.approved_clubs[0]?.name || 'Club Portal')}</div>
               </div>
-              <button type="button" data-go="club" class="px-3.5 py-2 rounded-xl bg-aut-maroon text-white text-xs font-bold shrink-0">Club Portal</button>
+              <button type="button" data-go="club" class="px-3.5 py-2 rounded-xl bg-aut-maroon text-white text-xs font-bold shrink-0">${esc(t('club_portal'))}</button>
             </div>
           ` : ''}
         </div>
@@ -319,7 +435,7 @@
       const dow = base.getUTCDay(); // 0=Sun..6=Sat
       const diffToMon = dow === 0 ? -6 : 1 - dow;
       const mon = new Date(base.getTime() + diffToMon * 86400000);
-      const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+      const labels = t('days');
       const fullNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
       return labels.map((lbl, i) => {
         const dt = new Date(mon.getTime() + i * 86400000);
@@ -330,7 +446,7 @@
 
     function getWeekdayLabel(dateStr) {
       const [y, m, d] = dateStr.split('-').map(Number);
-      const names = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const names = t('full_days');
       return names[new Date(Date.UTC(y, m - 1, d)).getUTCDay()] || '';
     }
 
@@ -371,15 +487,15 @@
                 <button type="button" data-tt-day="${wd.date}" class="px-2.5 py-1 rounded-lg text-[11px] font-bold border ${appState.selectedDate === wd.date ? 'bg-aut-ink text-white border-aut-ink' : 'bg-white text-neutral-700 border-neutral-200'}">${wd.label}</button>
               `).join('')}
             </div>
-            <span class="text-[10px] font-semibold text-neutral-500">Tap any green slot to book</span>
+            <span class="text-[10px] font-semibold text-neutral-500">${esc(t('tap_green'))}</span>
           </div>
 
           <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-semibold text-neutral-600">
-            <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-aut-ink inline-block"></span>Class</span>
-            <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-aut-quiet inline-block"></span>Quiet Study</span>
-            <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-aut-maroon inline-block"></span>Collaboration</span>
-            <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-teal-700 inline-block"></span>Booked</span>
-            <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-emerald-100 border border-emerald-400 inline-block"></span>Free</span>
+            <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-aut-ink inline-block"></span>${esc(t('leg_class'))}</span>
+            <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-aut-quiet inline-block"></span>${esc(t('leg_quiet'))}</span>
+            <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-aut-maroon inline-block"></span>${esc(t('leg_collab'))}</span>
+            <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-teal-700 inline-block"></span>${esc(t('leg_booked'))}</span>
+            <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-emerald-100 border border-emerald-400 inline-block"></span>${esc(t('leg_free'))}</span>
           </div>
 
           ${shown.length === 0 ? `<div class="p-6 text-center text-xs text-neutral-500">No rooms match your filter.</div>` : `
@@ -388,11 +504,11 @@
                 <thead>
                   <tr class="border-b border-neutral-200 bg-neutral-50 text-[10px] font-bold text-neutral-600">
                     <th class="sticky left-0 z-20 bg-neutral-50 px-2.5 py-2 border-r border-neutral-200 w-[108px] min-w-[108px]">
-                      Room<br><span class="text-[9px] font-semibold text-neutral-400">(${esc(dayName)})</span>
+                      ${esc(t('room_col'))}<br><span class="text-[9px] font-semibold text-neutral-400">(${esc(dayName)})</span>
                     </th>
                     ${hours.map(h => `
                       <th class="px-1.5 py-2 text-center border-r border-neutral-100 w-[72px] min-w-[72px] ${h === nowHour ? 'bg-aut-maroonLight text-aut-maroon' : ''}">
-                        ${String(h).padStart(2, '0')}:00${h === nowHour ? '<div class="text-[8px] font-extrabold uppercase">Now</div>' : ''}
+                        ${String(h).padStart(2, '0')}:00${h === nowHour ? `<div class="text-[8px] font-extrabold uppercase">${esc(t('now_lbl'))}</div>` : ''}
                       </th>
                     `).join('')}
                   </tr>
@@ -430,7 +546,7 @@
                           return `
                             <td class="p-1 border-r border-neutral-100 align-middle ${h === nowHour ? 'bg-aut-maroonLight/20' : 'bg-emerald-50/40'}">
                               <button type="button" data-tt-book="${r.room_id}|${startStr}|${endStr}" class="w-full py-1.5 rounded-lg text-[10px] font-bold text-emerald-700 hover:bg-emerald-100 active:bg-emerald-200 transition">
-                                Free
+                                ${esc(t('free_cell'))}
                               </button>
                             </td>
                           `;
@@ -467,7 +583,7 @@
           </div>
           <div class="flex gap-2">
             ${isSession ? `<button type="button" id="ttGoSessBtn" class="flex-1 py-2.5 rounded-xl bg-aut-maroon text-white font-bold">Open in Sessions</button>` : ''}
-            <button type="button" onclick="closeModal()" class="flex-1 py-2.5 rounded-xl border border-neutral-300 font-bold text-neutral-700">Close</button>
+            <button type="button" onclick="closeModal()" class="flex-1 py-2.5 rounded-xl border border-neutral-300 font-bold text-neutral-700">${esc(t('close'))}</button>
           </div>
         </div>
       `);
@@ -482,33 +598,33 @@
         <div class="space-y-3.5">
           <div class="flex items-center justify-between gap-2">
             <div>
-              <h1 class="text-lg font-extrabold text-aut-ink leading-tight">Study Rooms</h1>
-              <span class="text-[10px] font-semibold text-neutral-500">${shown.length} rooms &middot; ${esc(appState.selectedDate)}</span>
+              <h1 class="text-lg font-extrabold text-aut-ink leading-tight">${esc(t('study_rooms'))}</h1>
+              <span class="text-[10px] font-semibold text-neutral-500">${shown.length} ${esc(t('rooms_word'))} &middot; ${esc(appState.selectedDate)}</span>
             </div>
             <div class="inline-flex bg-white p-0.5 rounded-xl border border-neutral-200 shadow-sm">
-              <button type="button" data-rm-view="timetable" class="px-2.5 py-1 rounded-lg text-[11px] font-bold ${appState.roomView === 'timetable' ? 'bg-aut-maroon text-white' : 'text-neutral-600'}">Timetable</button>
-              <button type="button" data-rm-view="cards" class="px-2.5 py-1 rounded-lg text-[11px] font-bold ${appState.roomView === 'cards' ? 'bg-aut-maroon text-white' : 'text-neutral-600'}">Cards</button>
+              <button type="button" data-rm-view="timetable" class="px-2.5 py-1 rounded-lg text-[11px] font-bold ${appState.roomView === 'timetable' ? 'bg-aut-maroon text-white' : 'text-neutral-600'}">${esc(t('timetable'))}</button>
+              <button type="button" data-rm-view="cards" class="px-2.5 py-1 rounded-lg text-[11px] font-bold ${appState.roomView === 'cards' ? 'bg-aut-maroon text-white' : 'text-neutral-600'}">${esc(t('cards'))}</button>
             </div>
           </div>
 
           <div class="bg-white rounded-2xl border border-neutral-200 p-3.5 space-y-2.5 shadow-sm">
             <div class="grid grid-cols-2 gap-2">
               <div>
-                <label class="block text-[10px] font-bold text-neutral-500 uppercase mb-1">Date</label>
+                <label class="block text-[10px] font-bold text-neutral-500 uppercase mb-1">${esc(t('date'))}</label>
                 <input id="rmDate" type="date" value="${esc(appState.selectedDate)}" class="w-full px-2.5 py-1.5 text-xs border border-neutral-300 rounded-lg" />
               </div>
               <div>
-                <label class="block text-[10px] font-bold text-neutral-500 uppercase mb-1">Time (Tashkent)</label>
+                <label class="block text-[10px] font-bold text-neutral-500 uppercase mb-1">${esc(t('time_tash'))}</label>
                 <input id="rmTime" type="time" value="${esc(appState.selectedTime)}" class="w-full px-2.5 py-1.5 text-xs border border-neutral-300 rounded-lg" />
               </div>
             </div>
-            <input id="rmSearch" type="text" value="${esc(f.search)}" placeholder="Search room number or type..." class="w-full px-3 py-2 text-xs border border-neutral-300 rounded-lg" />
+            <input id="rmSearch" type="text" value="${esc(f.search)}" placeholder="${esc(t('search_ph'))}" class="w-full px-3 py-2 text-xs border border-neutral-300 rounded-lg" />
             <div class="flex flex-wrap gap-1.5">
-              <button type="button" id="fltAvailNow" class="px-2.5 py-1 rounded-full text-[11px] font-semibold border ${f.availableNow ? 'bg-aut-maroon text-white border-aut-maroon' : 'bg-neutral-50 text-neutral-700 border-neutral-300'}">Available Now</button>
-              <button type="button" id="flt2h" class="px-2.5 py-1 rounded-full text-[11px] font-semibold border ${f.minDuration === 120 ? 'bg-aut-maroon text-white border-aut-maroon' : 'bg-neutral-50 text-neutral-700 border-neutral-300'}">2+ Hours Free</button>
+              <button type="button" id="fltAvailNow" class="px-2.5 py-1 rounded-full text-[11px] font-semibold border ${f.availableNow ? 'bg-aut-maroon text-white border-aut-maroon' : 'bg-neutral-50 text-neutral-700 border-neutral-300'}">${esc(t('flt_avail'))}</button>
+              <button type="button" id="flt2h" class="px-2.5 py-1 rounded-full text-[11px] font-semibold border ${f.minDuration === 120 ? 'bg-aut-maroon text-white border-aut-maroon' : 'bg-neutral-50 text-neutral-700 border-neutral-300'}">${esc(t('flt_2h'))}</button>
               <select id="fltFloor" class="px-2.5 py-1 rounded-full text-[11px] font-semibold border border-neutral-300 bg-neutral-50">
-                <option value="" ${!f.floor ? 'selected' : ''}>All Floors</option>
-                ${[2,3,4,5,6].map(fl => `<option value="${fl}" ${String(f.floor) === String(fl) ? 'selected' : ''}>Floor ${fl}</option>`).join('')}
+                <option value="" ${!f.floor ? 'selected' : ''}>${esc(t('all_floors'))}</option>
+                ${[2,3,4,5,6].map(fl => `<option value="${fl}" ${String(f.floor) === String(fl) ? 'selected' : ''}>${esc(t('floor'))} ${fl}</option>`).join('')}
               </select>
             </div>
           </div>
@@ -547,8 +663,8 @@
                     <div class="p-2.5 rounded-xl bg-neutral-100 text-neutral-600 text-xs">${r.status === 'closed' ? 'Campus booking hours are 08:00–21:00. Change date/time above to inspect tomorrow.' : 'Unavailable for student booking.'}</div>
                   `}
                   <div class="flex gap-2">
-                    <button type="button" data-room-open="${r.room_id}" class="flex-1 py-2 rounded-xl border border-neutral-300 text-xs font-bold text-aut-ink">Timetable</button>
-                    ${r.student_bookable && r.status !== 'unavailable' ? `<button type="button" data-room-book="${r.room_id}" class="flex-1 py-2 rounded-xl bg-aut-maroon text-white text-xs font-bold">Reserve</button>` : ''}
+                    <button type="button" data-room-open="${r.room_id}" class="flex-1 py-2 rounded-xl border border-neutral-300 text-xs font-bold text-aut-ink">${esc(t('timetable'))}</button>
+                    ${r.student_bookable && r.status !== 'unavailable' ? `<button type="button" data-room-book="${r.room_id}" class="flex-1 py-2 rounded-xl bg-aut-maroon text-white text-xs font-bold">${esc(t('reserve'))}</button>` : ''}
                   </div>
                 </article>
               `;
@@ -600,16 +716,16 @@
       openModal(`
         <form id="resForm" class="p-5 space-y-3.5 text-xs">
           <div class="flex items-start justify-between">
-            <div><span class="text-[10px] font-bold uppercase text-aut-maroon">Reserve Room</span><h2 class="text-lg font-extrabold">${esc(r.name)} (${esc(appState.selectedDate)})</h2></div>
+            <div><span class="text-[10px] font-bold uppercase text-aut-maroon">${esc(t('reserve_room'))}</span><h2 class="text-lg font-extrabold">${esc(r.name)} (${esc(appState.selectedDate)})</h2></div>
             <button type="button" onclick="closeModal()" class="p-1.5 rounded-lg hover:bg-neutral-100"><i data-lucide="x" class="w-5 h-5"></i></button>
           </div>
           <div id="resErr" class="hidden p-2.5 rounded-xl bg-red-50 border border-red-300 text-red-900 font-semibold"></div>
           <div class="grid grid-cols-2 gap-2">
-            <div><label class="block font-bold mb-1">Start</label><input id="fStart" type="time" value="${defStart}" required class="w-full px-3 py-2 border border-neutral-300 rounded-xl" /></div>
-            <div><label class="block font-bold mb-1">End</label><input id="fEnd" type="time" value="${defEnd}" required class="w-full px-3 py-2 border border-neutral-300 rounded-xl" /></div>
+            <div><label class="block font-bold mb-1">${esc(t('start'))}</label><input id="fStart" type="time" value="${defStart}" required class="w-full px-3 py-2 border border-neutral-300 rounded-xl" /></div>
+            <div><label class="block font-bold mb-1">${esc(t('end'))}</label><input id="fEnd" type="time" value="${defEnd}" required class="w-full px-3 py-2 border border-neutral-300 rounded-xl" /></div>
           </div>
-          <div><label class="block font-bold mb-1">Purpose</label><input id="fPurpose" type="text" value="Study Session" required class="w-full px-3 py-2 border border-neutral-300 rounded-xl" /></div>
-          <button type="submit" class="w-full py-2.5 rounded-xl bg-aut-maroon text-white font-bold">Confirm Reservation</button>
+          <div><label class="block font-bold mb-1">${esc(t('purpose'))}</label><input id="fPurpose" type="text" value="Study Session" required class="w-full px-3 py-2 border border-neutral-300 rounded-xl" /></div>
+          <button type="submit" class="w-full py-2.5 rounded-xl bg-aut-maroon text-white font-bold">${esc(t('confirm_res'))}</button>
         </form>
       `);
       document.getElementById('resForm').addEventListener('submit', async (e) => {
@@ -629,7 +745,7 @@
           });
           closeModal();
           await refreshAll();
-          openShareConfirmModal('Room Reserved!', {
+          openShareConfirmModal(t('room_reserved'), {
             title: purposeVal || 'Study Room Booking',
             roomName: out.room_name || ('Room ' + roomId),
             date: out.reservation_date,
@@ -675,8 +791,8 @@
             ${info.code ? `<p class="text-[11px] font-mono font-bold text-aut-maroon mt-1">Code: ${esc(info.code)}</p>` : ''}
           </div>
           <div class="space-y-2 pt-1">
-            <button type="button" id="confirmShareBtn" class="w-full py-2.5 rounded-xl bg-aut-maroon text-white text-xs font-bold">📤 Share with Study Group</button>
-            <button type="button" id="confirmDoneBtn" class="w-full py-2 rounded-xl border border-neutral-300 text-neutral-700 text-xs font-bold">Done</button>
+            <button type="button" id="confirmShareBtn" class="w-full py-2.5 rounded-xl bg-aut-maroon text-white text-xs font-bold">${esc(t('share_study_group'))}</button>
+            <button type="button" id="confirmDoneBtn" class="w-full py-2 rounded-xl border border-neutral-300 text-neutral-700 text-xs font-bold">${esc(t('done'))}</button>
           </div>
         </div>
       `);
@@ -688,21 +804,21 @@
       const list = appState.sessions.filter(s => appState.sessionFilter === 'all' || s.session_type === appState.sessionFilter);
       return `
         <div class="space-y-3.5">
-          <h1 class="text-lg font-extrabold text-aut-ink">Study Sessions &amp; Club Events</h1>
+          <h1 class="text-lg font-extrabold text-aut-ink">${esc(t('sessions_title'))}</h1>
           <div class="flex flex-wrap gap-1.5">
-            ${[['all', 'All'], ['quiet', 'Quiet Study'], ['collaboration', 'Collaboration'], ['club_event', 'Club Events']].map(([k, l]) => `
+            ${[['all', t('all')], ['quiet', t('leg_quiet')], ['collaboration', t('leg_collab')], ['club_event', t('club_events')]].map(([k, l]) => `
               <button type="button" data-sf="${k}" class="px-3 py-1.5 rounded-full text-xs font-semibold border ${appState.sessionFilter === k ? 'bg-aut-maroon text-white border-aut-maroon' : 'bg-white text-neutral-700 border-neutral-300'}">${l}</button>
             `).join('')}
           </div>
           <div class="space-y-3">
-            ${list.length === 0 ? '<div class="bg-white rounded-2xl border border-neutral-200 p-8 text-center text-xs text-neutral-500">No sessions in this category yet.</div>' : list.map(s => {
+            ${list.length === 0 ? `<div class="bg-white rounded-2xl border border-neutral-200 p-8 text-center text-xs text-neutral-500">${esc(t('no_sessions'))}</div>` : list.map(s => {
               const tagStyle = s.session_type === 'quiet' ? 'bg-aut-quietBg text-aut-quiet' : s.session_type === 'club_event' ? 'bg-amber-100 text-amber-900' : 'bg-aut-maroonLight text-aut-maroon';
               const tagLabel = s.session_type === 'quiet' ? 'Quiet Study' : s.session_type === 'club_event' ? 'Club Event' : `Collaboration (Min ${s.min_group_size})`;
               return `
                 <article class="bg-white rounded-2xl border border-neutral-200 p-4 shadow-sm space-y-2.5">
                   <div class="flex items-center justify-between">
                     <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold ${tagStyle}">${tagLabel}</span>
-                    <span class="text-[11px] font-bold ${s.is_full ? 'text-red-700' : 'text-emerald-700'}">${s.is_full ? 'Full' : `${s.seats_available}/${s.max_capacity} seats left`}</span>
+                    <span class="text-[11px] font-bold ${s.is_full ? 'text-red-700' : 'text-emerald-700'}">${s.is_full ? esc(t('full')) : `${s.seats_available}/${s.max_capacity} ${esc(t('seats_left'))}`}</span>
                   </div>
                   <div>
                     <h2 class="font-extrabold text-sm text-aut-ink">${esc(s.title)}</h2>
@@ -711,13 +827,13 @@
                   <div class="text-xs text-neutral-600"><strong>${esc(s.room_name)}</strong> &middot; ${esc(s.session_date)} ${esc(s.start_time)}–${esc(s.end_time)}</div>
                   ${s.user_registered ? `
                     <div class="grid grid-cols-2 gap-2">
-                      <button type="button" data-share-s="${s.id}" class="py-2 rounded-xl bg-aut-maroon text-white text-xs font-bold">📤 Share Group</button>
-                      <button type="button" data-leave-s="${s.id}" class="py-2 rounded-xl border border-red-300 bg-red-50 text-red-800 text-xs font-bold">Leave Session</button>
+                      <button type="button" data-share-s="${s.id}" class="py-2 rounded-xl bg-aut-maroon text-white text-xs font-bold">${esc(t('share_group'))}</button>
+                      <button type="button" data-leave-s="${s.id}" class="py-2 rounded-xl border border-red-300 bg-red-50 text-red-800 text-xs font-bold">${esc(t('leave_session'))}</button>
                     </div>
                   ` : s.is_full ? `
-                    <button type="button" disabled class="w-full py-2 rounded-xl bg-neutral-200 text-neutral-500 text-xs font-bold">Session Full</button>
+                    <button type="button" disabled class="w-full py-2 rounded-xl bg-neutral-200 text-neutral-500 text-xs font-bold">${esc(t('session_full'))}</button>
                   ` : `
-                    <button type="button" data-join-s="${s.id}" class="w-full py-2 rounded-xl bg-aut-maroon text-white text-xs font-bold">${s.session_type === 'collaboration' ? `Register Group (Min ${s.min_group_size})` : 'Join Session'}</button>
+                    <button type="button" data-join-s="${s.id}" class="w-full py-2 rounded-xl bg-aut-maroon text-white text-xs font-bold">${s.session_type === 'collaboration' ? `${esc(t('reg_group'))} (Min ${s.min_group_size})` : esc(t('join_session'))}</button>
                   `}
                 </article>
               `;
@@ -731,22 +847,22 @@
       const list = appState.bookings[appState.bookingTab] || [];
       return `
         <div class="space-y-3.5">
-          <h1 class="text-lg font-extrabold text-aut-ink">My Bookings</h1>
+          <h1 class="text-lg font-extrabold text-aut-ink">${esc(t('my_bookings'))}</h1>
           <div class="grid grid-cols-3 gap-1.5 bg-white p-1 rounded-xl border border-neutral-200">
-            ${[['upcoming', 'Upcoming'], ['past', 'Past'], ['cancelled', 'Cancelled']].map(([k, l]) => `
+            ${[['upcoming', t('upcoming')], ['past', t('past')], ['cancelled', t('cancelled')]].map(([k, l]) => `
               <button type="button" data-bt="${k}" class="py-1.5 rounded-lg text-xs font-bold ${appState.bookingTab === k ? 'bg-aut-maroon text-white' : 'text-neutral-600'}">${l}</button>
             `).join('')}
           </div>
-          ${list.length === 0 ? `<div class="bg-white rounded-2xl border border-neutral-200 p-8 text-center text-xs text-neutral-500">No ${appState.bookingTab} bookings yet.</div>` : `
+          ${list.length === 0 ? `<div class="bg-white rounded-2xl border border-neutral-200 p-8 text-center text-xs text-neutral-500">${esc(t('no_bookings'))}</div>` : `
             <div class="space-y-2.5">
               ${list.map(b => `
                 <div class="bg-white rounded-2xl border border-neutral-200 p-4 shadow-sm space-y-2">
                   <div class="flex justify-between items-center gap-2">
                     <span class="text-[10px] font-mono font-bold text-neutral-500">${esc(b.code)}</span>
                     <div class="flex items-center gap-1.5">
-                      ${b.kind === 'room_reservation' && b.check_in_status === 'checked_in' ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-600 text-white">✓ Checked In</span>' : ''}
-                      ${b.kind === 'room_reservation' && b.check_in_status === 'open' ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-aut-maroonLight text-aut-maroon">15m Check-In Open</span>' : ''}
-                      ${b.kind === 'room_reservation' && b.check_in_status === 'overdue' ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900">⚠ Check-In Overdue</span>' : ''}
+                      ${b.kind === 'room_reservation' && b.check_in_status === 'checked_in' ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-600 text-white">${esc(t('checked_in'))}</span>` : ''}
+                      ${b.kind === 'room_reservation' && b.check_in_status === 'open' ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-aut-maroonLight text-aut-maroon">${esc(t('checkin_open'))}</span>` : ''}
+                      ${b.kind === 'room_reservation' && b.check_in_status === 'overdue' ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900">${esc(t('checkin_overdue'))}</span>` : ''}
                       <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">${esc(b.status.replace('_', ' '))}</span>
                     </div>
                   </div>
@@ -754,13 +870,13 @@
                   <div class="text-xs text-neutral-600">${esc(b.room_name)} &middot; ${esc(b.date)} &middot; ${esc(b.start_time)}–${esc(b.end_time)}</div>
                   ${appState.bookingTab === 'upcoming' && b.kind === 'room_reservation' && b.check_in_status !== 'checked_in' ? `
                     <button type="button" data-checkin-bk="${b.id}" class="w-full py-2 rounded-xl ${b.check_in_status === 'open' || b.check_in_status === 'overdue' ? 'bg-emerald-600 text-white' : 'bg-neutral-100 text-neutral-700 border border-neutral-300'} text-xs font-bold">
-                      ${b.check_in_status === 'open' ? '✓ Check In Now (15-min window)' : b.check_in_status === 'overdue' ? '⚠ Late Check-In (Keep Slot)' : '✓ Check In (Opens 15m before start)'}
+                      ${b.check_in_status === 'open' ? t('btn_checkin_now') : b.check_in_status === 'overdue' ? t('btn_checkin_late') : t('btn_checkin_soon')}
                     </button>
                   ` : ''}
                   ${appState.bookingTab === 'upcoming' ? `
                     <div class="grid grid-cols-2 gap-2">
-                      <button type="button" data-share-bk="${b.kind}:${b.id}" class="py-2 rounded-xl bg-aut-maroon text-white text-xs font-bold">📤 Share Group</button>
-                      <button type="button" data-cancel-bk="${b.kind}:${b.id}" class="py-2 rounded-xl border border-red-300 bg-red-50 text-red-800 text-xs font-bold">Cancel</button>
+                      <button type="button" data-share-bk="${b.kind}:${b.id}" class="py-2 rounded-xl bg-aut-maroon text-white text-xs font-bold">${esc(t('share_group'))}</button>
+                      <button type="button" data-cancel-bk="${b.kind}:${b.id}" class="py-2 rounded-xl border border-red-300 bg-red-50 text-red-800 text-xs font-bold">${esc(t('cancel'))}</button>
                     </div>
                   ` : ''}
                 </div>
@@ -794,7 +910,7 @@
                 <div class="text-xs text-neutral-600">${esc(ev.room_name)} &middot; ${esc(ev.event_date)} ${esc(ev.start_time)}–${esc(ev.end_time)}</div>
                 <div class="flex gap-2">
                   ${ev.status === 'confirmed' && !ev.is_published ? `<button type="button" data-pub-ev="${ev.id}" class="flex-1 py-2 rounded-xl bg-aut-maroon text-white text-xs font-bold">Publish to Sessions</button>` : ''}
-                  ${ev.status !== 'cancelled' ? `<button type="button" data-can-ev="${ev.id}" class="flex-1 py-2 rounded-xl border border-red-300 bg-red-50 text-red-800 text-xs font-bold">Cancel</button>` : ''}
+                  ${ev.status !== 'cancelled' ? `<button type="button" data-can-ev="${ev.id}" class="flex-1 py-2 rounded-xl border border-red-300 bg-red-50 text-red-800 text-xs font-bold">${esc(t('cancel'))}</button>` : ''}
                 </div>
               </article>
             `).join('')}
@@ -963,6 +1079,7 @@
       }));
     }
 
+    document.getElementById('langToggleBtn').addEventListener('click', cycleLang);
     document.getElementById('notifBellBtn').addEventListener('click', () => {
       openModal(`
         <div class="p-5 space-y-3">
