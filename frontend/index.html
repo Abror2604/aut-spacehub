@@ -120,7 +120,7 @@
         try {
           browserId = localStorage.getItem('spacehub_browser_uid') || '';
           if (!browserId) {
-            browserId = 'web_' + Math.floor(100000 + Math.random() * 900000);
+            const buf = new Uint32Array(1); window.crypto.getRandomValues(buf); browserId = 'web_' + (100000 + (buf[0] % 900000));
             localStorage.setItem('spacehub_browser_uid', browserId);
           }
         } catch (e) { browserId = 'web_guest'; }
@@ -339,7 +339,7 @@
       const weekDays = getWeekDaysFor(appState.selectedDate);
       const dayName = getWeekdayLabel(appState.selectedDate);
       const nowClock = getTashkentNow();
-      const nowHour = nowClock.date === appState.selectedDate ? parseInt(nowClock.time.slice(0, 2), 10) : -1;
+      const nowHour = nowClock.date === appState.selectedDate ? Number.parseInt(nowClock.time.slice(0, 2), 10) : -1;
 
       const pillStyle = (ev) => {
         const s = ev.source || '';
@@ -843,7 +843,7 @@
               start_time: document.getElementById('ceStart').value,
               end_time: document.getElementById('ceEnd').value,
               room_id: document.getElementById('ceRoom').value,
-              expected_participants: parseInt(document.getElementById('ceExp').value, 10),
+              expected_participants: Number.parseInt(document.getElementById('ceExp').value, 10),
               is_open_to_all: true
             })
           });
@@ -869,7 +869,7 @@
       }));
       document.querySelectorAll('[data-tt-info]').forEach(b => b.addEventListener('click', () => {
         const [rid, idx] = b.dataset.ttInfo.split(':');
-        openTimetableEventModal(rid, parseInt(idx, 10));
+        openTimetableEventModal(rid, Number.parseInt(idx, 10));
       }));
 
       const rmDate = document.getElementById('rmDate');
@@ -887,7 +887,7 @@
 
       document.querySelectorAll('[data-sf]').forEach(b => b.addEventListener('click', () => { appState.sessionFilter = b.dataset.sf; render(); }));
       document.querySelectorAll('[data-join-s]').forEach(b => b.addEventListener('click', async () => {
-        const sid = parseInt(b.dataset.joinS, 10);
+        const sid = Number.parseInt(b.dataset.joinS, 10);
         const s = appState.sessions.find(x => x.id === sid);
         if (s && s.session_type === 'collaboration') {
           openModal(`
@@ -900,7 +900,7 @@
           document.getElementById('gForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             try {
-              await api(`/api/sessions/${sid}/join`, { method: 'POST', body: JSON.stringify({ group_size: parseInt(document.getElementById('gSize').value, 10) }) });
+              await api(`/api/sessions/${sid}/join`, { method: 'POST', body: JSON.stringify({ group_size: Number.parseInt(document.getElementById('gSize').value, 10) }) });
               closeModal();
               await refreshAll();
               openShareConfirmModal('Group Registered!', {
@@ -921,7 +921,7 @@
       }));
 
       document.querySelectorAll('[data-share-s]').forEach(b => b.addEventListener('click', () => {
-        const s = appState.sessions.find(x => x.id === parseInt(b.dataset.shareS, 10));
+        const s = appState.sessions.find(x => x.id === Number.parseInt(b.dataset.shareS, 10));
         if (s) shareToStudyGroup({ title: s.title, roomName: s.room_name, date: s.session_date, startTime: s.start_time, endTime: s.end_time });
       }));
       document.querySelectorAll('[data-share-bk]').forEach(b => b.addEventListener('click', () => {
